@@ -3,6 +3,40 @@
 <title>Breathe</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
+    :root {
+        --background: #f0f0f0;
+        --foreground: #000000;
+        --outer-circle: #cccccc;
+        --inner-circle: #0e6caa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background: #252525;
+            --foreground: #dddddd;
+            --outer-circle: #5a5a5a;
+            --inner-circle: #0e6caa;
+        }
+    }
+
+    @media (prefers-color-scheme: dark) and (prefers-contrast: more) {
+        :root {
+            --background: #000000;
+            --foreground: #ffffff;
+            --outer-circle: #ffffff;
+            --inner-circle: #000000;
+        }
+    }
+
+    @media (prefers-color-scheme: light) and (prefers-contrast: more) {
+        :root {
+            --background: #ffffff;
+            --foreground: #000000;
+            --outer-circle: #000000;
+            --inner-circle: #ffffff;
+        }
+    }
+
     * {
         margin: 0;
         padding: 0;
@@ -10,7 +44,8 @@
     }
 
     body {
-        background-color: #f0f0f0;
+        background-color: var(--background);
+        color: var(--foreground);
         height: 100vh;
         margin: 0;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -36,7 +71,7 @@
         border-radius: 100vmax;
         width: 85vmin;
         height: 85vmin;
-        background-color: #cccccc;
+        background-color: var(--outer-circle);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -46,7 +81,7 @@
     }
 
     #inner-circle {
-        background-color: #0e6caa;
+        background-color: var(--inner-circle);
         border-radius: 100vmax;
         line-height: 0;
         transition: width 4s linear, height 4s linear;
@@ -71,6 +106,18 @@
     #inner-circle.breathe-out {
         width: 0;
         height: 0;
+    }
+
+    @media (prefers-contrast: more) {
+        #seconds {
+            mix-blend-mode: difference;
+        }
+    }
+
+    @media (prefers-color-scheme: light) and (prefers-contrast: more) {
+        #seconds {
+            color: #ffffff;
+        }
     }
 </style>
 
