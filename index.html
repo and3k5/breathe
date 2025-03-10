@@ -7,6 +7,7 @@
     :root {
         --background: #f0f0f0;
         --foreground: #000000;
+        --timer-circle: #000000;
         --outer-circle: #cccccc;
         --inner-circle: #0e6caa;
     }
@@ -15,6 +16,7 @@
         :root {
             --background: #252525;
             --foreground: #dddddd;
+            --timer-circle: #dddddd;
             --outer-circle: #5a5a5a;
             --inner-circle: #0e6caa;
         }
@@ -24,6 +26,7 @@
         :root {
             --background: #000000;
             --foreground: #ffffff;
+            --timer-circle: #ffffff;
             --outer-circle: #ffffff;
             --inner-circle: #000000;
         }
@@ -33,6 +36,7 @@
         :root {
             --background: #ffffff;
             --foreground: #000000;
+            --timer-circle: #ffffff;
             --outer-circle: #000000;
             --inner-circle: #ffffff;
         }
@@ -68,119 +72,107 @@
         margin-top: 5vmin;
     }
 
-    #outer-circle {
+    #circle {
         border-radius: 100vmax;
         width: 85vmin;
         height: 85vmin;
-        background-color: var(--outer-circle);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
         max-width: 500px;
         max-height: 500px;
     }
 
-    #inner-circle {
-        background-color: var(--inner-circle);
-        border-radius: 100vmax;
-        line-height: 0;
-        transition: width 4s linear, height 4s linear;
-    }
-
-    #seconds {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 1em;
-        height: 1em;
-        font-size: min(50vmin, 280px);
-        transform: translate(-25%, -5%);
-
-    }
-
-    #inner-circle.breathe-in {
-        width: 100%;
-        height: 100%;
-    }
-
-    #inner-circle.breathe-out {
-        width: 0;
-        height: 0;
-    }
-
     @media (prefers-contrast: more) {
-        #seconds {
+        #timer-circle {
             mix-blend-mode: difference;
-        }
-    }
-
-    @media (prefers-color-scheme: light) and (prefers-contrast: more) {
-        #seconds {
-            color: #ffffff;
         }
     }
 </style>
 
 <body>
     <div id="app">
-        <div id="outer-circle">
-            <div id="inner-circle">
-                <div id="seconds"></div>
-            </div>
-        </div>
+        <svg id="circle" width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" id="outer-circle" cy="50" r="50" fill="var(--outer-circle)" />
+            <circle cx="50" id="inner-circle" cy="50" r="50" fill="var(--inner-circle)" />
+            <circle cx="50" id="timer-circle" cy="50" r="50" stroke="var(--timer-circle)" fill="none" stroke-width="3"
+                transform="rotate(-90 50 50)">
+            </circle>
+        </svg>
         <div id="instruction"></div>
     </div>
     <script>
+        const circle = document.getElementById('circle');
         const innerCircle = document.getElementById('inner-circle');
-        const seconds = document.getElementById('seconds');
+        const timerCircle = document.getElementById('timer-circle');
         const instruction = document.getElementById('instruction');
+
+        const milliseconds = 4000;
+
+        function createAnimation(obj, attributeName, ms) {
+            const animation = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+            animation.setAttribute("attributeName", attributeName);
+            console.log(Object.keys(obj));
+            for (const key of Object.keys(obj)) {
+                animation.setAttribute(key, obj[key]);
+            }
+            animation.setAttribute("fill", "freeze");
+            animation.setAttribute("dur", ms + "ms");
+            animation.setAttribute("repeatCount", "1");
+            return animation;
+        }
+
+        const dashArrayNumber = 2 * Math.PI * 50;
 
         // 0 = breathe in
         // 1 = hold
         // 2 = breathe out
         // 3 = hold
-        let state = 1;
-        let renderedNumber = "";
-        let renderedText = "";
+        let state = undefined;
 
-        let lastState = performance.now();
-        function instructionFrame(now) {
-            if (now - lastState > 4000) {
-                lastState = now;
-                state = (state + 1) % 4;
-            }
+        const circleAnimation1 = createAnimation({ values: `${dashArrayNumber}, 0; 0, ${dashArrayNumber}` }, "stroke-dasharray", milliseconds);
+        const circleAnimation2 = createAnimation({ values: `0, ${dashArrayNumber}; ${dashArrayNumber}, 0` }, "stroke-dasharray", milliseconds);
+        const circleAnimationOffset = createAnimation({ from: `-${dashArrayNumber}`, to: "0" }, "stroke-dashoffset", milliseconds);
 
-            let textToRender = "";
-            switch (state) {
-                case 0:
-                    innerCircle.className = 'breathe-in';
-                    textToRender = "Breathe in";
-                    break;
-                case 1:
-                    innerCircle.className = 'breathe-in';
-                    textToRender = "Hold";
-                    break;
-                case 2:
-                    innerCircle.className = 'breathe-out';
-                    textToRender = "Breathe out";
-                    break;
-                case 3:
-                    innerCircle.className = 'breathe-out';
-                    textToRender = "Hold";
-                    break;
-            }
 
-            const numberToRender = (1 + ~~((now - lastState) / 1000)).toString();
-            if (numberToRender !== renderedNumber) {
-                renderedNumber = numberToRender;
-                seconds.innerText = numberToRender;
-            }
+        const breatheInAnimation = createAnimation({ from: "0", to: "50", }, "r", milliseconds);
+        const breatheOutAnimation = createAnimation({ from: "50", to: "0", }, "r", milliseconds);
 
-            if (renderedText != textToRender) {
-                renderedText = textToRender;
+        function instructionFrame() {
+            if (state === undefined || circle.getCurrentTime() >= 4) {
+                let textToRender = "";
+                state = ((state || 0) + 1) % 4;
+
+                timerCircle.innerHTML = "";
+                innerCircle.innerHTML = "";
+                switch (state) {
+                    case 0:
+                        innerCircle.appendChild(breatheInAnimation);
+                        textToRender = "Breathe in";
+                        timerCircle.appendChild(circleAnimation2);
+                        timerCircle.appendChild(circleAnimationOffset);
+                        break;
+                    case 1:
+                        textToRender = "Hold";
+                        innerCircle.setAttribute("r", "50");
+                        timerCircle.appendChild(circleAnimation1);
+                        break;
+                    case 2:
+                        innerCircle.appendChild(breatheOutAnimation);
+                        textToRender = "Breathe out";
+                        timerCircle.appendChild(circleAnimation2);
+                        timerCircle.appendChild(circleAnimationOffset);
+
+                        break;
+                    case 3:
+                        textToRender = "Hold";
+                        innerCircle.setAttribute("r", "0");
+                        timerCircle.appendChild(circleAnimation1);
+                        break;
+                }
+
+                circle.setCurrentTime(0);
+
                 instruction.innerText = textToRender;
             }
+
 
             requestAnimationFrame(instructionFrame);
         }
