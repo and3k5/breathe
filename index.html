@@ -135,6 +135,17 @@
         const breatheInAnimation = createAnimation({ from: "0", to: "50", }, "r", milliseconds);
         const breatheOutAnimation = createAnimation({ from: "50", to: "0", }, "r", milliseconds);
 
+        function vibrate() {
+            try {
+                if ("vibrate" in navigator) {
+                    navigator.vibrate(50);
+                }
+            }
+            catch {
+
+            }
+        }
+
         function instructionFrame() {
             if (state === undefined || circle.getCurrentTime() >= 4) {
                 let textToRender = "";
@@ -169,6 +180,7 @@
                 }
 
                 circle.setCurrentTime(0);
+                vibrate();
 
                 instruction.innerText = textToRender;
             }
